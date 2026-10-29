@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { BottomNav, MobileHeader, Sidebar } from "@/components/app-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { getCategories } from "@/lib/queries";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -16,9 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar categories={categories} userLabel={userLabel} />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileHeader />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-28 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-8 sm:px-6 lg:px-10 lg:pt-10 lg:pb-12">
           {children}
         </main>
+        {/* Bottom margin keeps the footer clear of the fixed mobile bottom navigation. */}
+        <SiteFooter className="mb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:mb-0" />
       </div>
       <BottomNav categories={categories} />
     </div>
