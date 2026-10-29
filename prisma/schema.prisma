@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Category {
+  id           String          @id @default(cuid())
+  userId       String
+  name         String
+  type         TransactionType
+  icon         String
+  color        String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  // Composite key lets child rows reference (id, userId), so the database
+  // itself rejects linking a record to another user's category.
+  @@unique([id, userId])
+  @@unique([userId, type, name])
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  userId        String
+  categoryId    String
+  type          TransactionType
+  amountCents   Int
+  currency      String          @default("EUR") @db.Char(3)
+  date          DateTime        @db.Date
+  description   String?         @db.VarChar(200)
+  note          String?         @db.VarChar(1000)
+  merchant      String?         @db.VarChar(120)
+  paymentMethod PaymentMethod?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category        @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  userId      String
+  categoryId  String
+  /// First day of the budget month.
+  month       DateTime @db.Date
+  amountCents Int
+  currency    String   @default("EUR") @db.Char(3)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+}
